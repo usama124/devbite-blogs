@@ -4,6 +4,9 @@ import { getPayload } from 'payload'
 
 export const dynamic = 'force-dynamic'
 
+const categories = ['science', 'tech', 'others'] as const
+type Category = (typeof categories)[number]
+
 const dateFormatter = new Intl.DateTimeFormat('en', {
   day: 'numeric',
   month: 'long',
@@ -11,7 +14,15 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 })
 
-export default async function PostsPage() {
+export default async function PostsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>
+}) {
+  const requestedCategory = (await searchParams).category
+  const category = categories.includes(requestedCategory as Category)
+    ? (requestedCategory as Category)
+    : undefined
   const payload = await getPayload({ config })
   const { docs: posts } = await payload.find({
     collection: 'posts',
@@ -19,6 +30,7 @@ export default async function PostsPage() {
     limit: 100,
     overrideAccess: false,
     sort: '-publishedAt',
+    where: category ? { category: { equals: category } } : undefined,
   })
 
   return (
@@ -31,7 +43,7 @@ export default async function PostsPage() {
 
       <section aria-labelledby="latest-posts">
         <div className="section-heading">
-          <h2 id="latest-posts">Latest posts</h2>
+          <h2 id="latest-posts">{category ? `Latest ${category} posts` : 'Latest posts'}</h2>
           <span>
             {posts.length} {posts.length === 1 ? 'article' : 'articles'}
           </span>
@@ -39,8 +51,8 @@ export default async function PostsPage() {
 
         {posts.length === 0 ? (
           <div className="empty-state">
-            <h3>No posts yet</h3>
-            <p>Check back soon for the first DevBite article.</p>
+            <h3>No {category ? `${category} ` : ''}posts yet</h3>
+            <p>Check back soon for a new DevBite article.</p>
           </div>
         ) : (
           <div className="post-grid">
