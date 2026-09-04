@@ -174,6 +174,15 @@ export interface Post {
   title: string;
   slug: string;
   category: 'science' | 'tech' | 'others';
+  /**
+   * Feature this post prominently on the public homepage.
+   */
+  featured?: boolean | null;
+  /**
+   * Recommended aspect ratio: 16:9.
+   */
+  featuredImage?: (number | null) | Media;
+  authorName: string;
   summary: string;
   content: {
     root: {
@@ -330,6 +339,9 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   category?: T;
+  featured?: T;
+  featuredImage?: T;
+  authorName?: T;
   summary?: T;
   content?: T;
   publishedAt?: T;

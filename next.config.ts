@@ -7,6 +7,12 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  agentRules: false,
+  experimental: {
+    // The CLI-based checker can fail to parse `tsc --showConfig` output in some
+    // build environments. Next's TypeScript API checker provides the same gate.
+    useTypeScriptCli: false,
+  },
   images: {
     localPatterns: [
       {

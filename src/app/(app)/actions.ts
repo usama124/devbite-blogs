@@ -20,9 +20,26 @@ export async function submitComment(formData: FormData): Promise<CommentActionSt
   const authorName = readRequiredString(formData, 'authorName')
   const authorEmail = readRequiredString(formData, 'authorEmail')
   const content = readRequiredString(formData, 'content')
+  const website = readRequiredString(formData, 'website')
 
   if (!postId || !authorName || !authorEmail || !content) {
     return { success: false, error: 'All fields are required.' }
+  }
+
+  if (website) {
+    return { success: true, message: 'Comment submitted for approval!' }
+  }
+
+  if (authorName.length < 2 || authorName.length > 120) {
+    return { success: false, error: 'Please enter a valid name.' }
+  }
+
+  if (authorEmail.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail)) {
+    return { success: false, error: 'Please enter a valid email address.' }
+  }
+
+  if (content.length < 3 || content.length > 5000) {
+    return { success: false, error: 'Comments must be between 3 and 5,000 characters.' }
   }
 
   try {

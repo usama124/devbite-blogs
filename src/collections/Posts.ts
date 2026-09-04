@@ -23,7 +23,6 @@ export const Posts: CollectionConfig = {
       type: 'text',
       required: true,
       unique: true,
-      index: true,
     },
     {
       name: 'category',
@@ -34,6 +33,30 @@ export const Posts: CollectionConfig = {
         { label: 'Tech', value: 'tech' },
         { label: 'Others', value: 'others' },
       ],
+    },
+    {
+      name: 'featured',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Feature this post prominently on the public homepage.',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'featuredImage',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description: 'Recommended aspect ratio: 16:9.',
+      },
+    },
+    {
+      name: 'authorName',
+      type: 'text',
+      required: true,
+      defaultValue: 'DevBite Editorial',
+      maxLength: 120,
     },
     {
       name: 'summary',

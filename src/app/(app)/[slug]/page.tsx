@@ -1,17 +1,29 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
-import config from '@payload-config'
+import { ArrowLeft, Clock3, MessageCircle, UserRound } from 'lucide-react'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
+import { cache } from 'react'
 
-import { submitComment } from '../actions'
+import config from '@payload-config'
+import { CommentForm } from '@/components/comments/CommentForm'
+import { PostImagePlaceholder } from '@/components/posts/PostImagePlaceholder'
+import { ShareBar } from '@/components/posts/ShareBar'
+import {
+  categoryStyles,
+  formatCategory,
+  getMediaPath,
+  getMediaURL,
+  getReadTime,
+  siteURL,
+} from '@/lib/posts'
 
 export const dynamic = 'force-dynamic'
 
 type PostPageProps = {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ comment?: string }>
 }
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -21,34 +33,61 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 })
 
-const categoryStyles = {
-  science: 'bg-blue-50 text-blue-700 ring-blue-200',
-  tech: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  others: 'bg-violet-50 text-violet-700 ring-violet-200',
-}
-
-async function findPost(slug: string) {
+const findPost = cache(async (slug: string) => {
   const payload = await getPayload({ config })
   const { docs } = await payload.find({
     collection: 'posts',
-    where: { slug: { equals: slug } },
-    depth: 0,
+    where: {
+      and: [
+        { slug: { equals: slug } },
+        { publishedAt: { less_than_equal: new Date().toISOString() } },
+      ],
+    },
+    depth: 1,
     limit: 1,
     overrideAccess: false,
   })
 
   return docs[0] ?? null
-}
+})
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { slug } = await params
   const post = await findPost(slug)
 
-  return post ? { title: post.title, description: post.summary } : { title: 'Post not found' }
+  if (!post) return { title: 'Post not found', robots: { index: false, follow: false } }
+
+  const canonicalURL = `${siteURL}/${post.slug}`
+  const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
+
+  return {
+    title: post.title,
+    description: post.summary,
+    authors: [{ name: post.authorName }],
+    alternates: { canonical: canonicalURL },
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description: post.summary,
+      url: canonicalURL,
+      siteName: 'DevBite Blogs',
+      publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
+      authors: [post.authorName],
+      section: formatCategory(post.category),
+      images: [{ url: imageURL, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.summary,
+      images: [imageURL],
+    },
+  }
 }
 
-export default async function PostPage({ params, searchParams }: PostPageProps) {
-  const [{ slug }, query] = await Promise.all([params, searchParams])
+export default async function PostPage({ params }: PostPageProps) {
+  const { slug } = await params
   const post = await findPost(slug)
 
   if (!post) notFound()
@@ -65,161 +104,193 @@ export default async function PostPage({ params, searchParams }: PostPageProps) 
     sort: 'createdAt',
   })
 
-  async function handleSubmit(formData: FormData) {
-    'use server'
-    const result = await submitComment(formData)
-    redirect(`/${slug}?comment=${result.success ? 'submitted' : 'failed'}#comments`)
+  const canonicalURL = `${siteURL}/${post.slug}`
+  const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
+  const imagePath = getMediaPath(post.featuredImage)
+  const readTime = getReadTime(post.content)
+  const initials = post.authorName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.summary,
+    image: imageURL,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    author: {
+      '@type': 'Person',
+      name: post.authorName,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'DevBite',
+      url: 'https://devbite.dev',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalURL,
+    },
+    articleSection: formatCategory(post.category),
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-0 pt-10 sm:pt-16">
+    <div className="mx-auto max-w-5xl pt-8 pb-6 sm:pt-12">
+      <script
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+        type="application/ld+json"
+      />
+
       <Link
-        className="group mb-10 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-emerald-700 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+        className="group inline-flex items-center gap-2 rounded-lg font-ui text-sm font-semibold text-muted-foreground transition hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
         href="/"
       >
-        <span aria-hidden="true" className="transition-transform group-hover:-translate-x-1">
-          ←
-        </span>
-        All posts
+        <ArrowLeft
+          aria-hidden="true"
+          className="transition-transform group-hover:-translate-x-1"
+          size={17}
+        />
+        Back to all stories
       </Link>
 
-      <article>
-        <header className="border-b border-slate-200 pb-10 sm:pb-14">
-          <div className="mb-6 flex flex-wrap items-center gap-3">
+      <article className="mt-10">
+        <header className="mx-auto max-w-4xl text-center">
+          <div className="flex flex-wrap items-center justify-center gap-3 font-ui text-sm text-muted-foreground">
             <span
               className={`rounded-full px-3 py-1 text-xs font-bold tracking-wider uppercase ring-1 ring-inset ${categoryStyles[post.category]}`}
             >
-              {post.category}
+              {formatCategory(post.category)}
             </span>
-            <span aria-hidden="true" className="size-1 rounded-full bg-slate-300" />
-            <time className="text-sm font-medium text-slate-500" dateTime={post.publishedAt}>
+            <span aria-hidden="true" className="size-1 rounded-full bg-border" />
+            <time dateTime={post.publishedAt}>
               {dateFormatter.format(new Date(post.publishedAt))}
             </time>
+            <span aria-hidden="true" className="size-1 rounded-full bg-border" />
+            <span className="inline-flex items-center gap-1.5">
+              <Clock3 aria-hidden="true" size={15} /> {readTime} min read
+            </span>
           </div>
-          <h1 className="max-w-3xl text-4xl leading-[1.08] font-black tracking-[-0.045em] text-slate-950 sm:text-6xl">
+
+          <h1 className="mt-7 text-4xl leading-[1.06] font-black tracking-[-0.05em] text-foreground sm:text-6xl lg:text-7xl">
             {post.title}
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-muted-foreground sm:text-xl">
             {post.summary}
           </p>
+
+          <div className="mt-8 flex items-center justify-center gap-3 font-ui">
+            <span className="grid size-11 place-items-center rounded-full bg-accent-soft text-sm font-black text-accent ring-1 ring-accent/15">
+              {initials || <UserRound aria-hidden="true" size={18} />}
+            </span>
+            <div className="text-left">
+              <p className="text-sm font-bold text-foreground">{post.authorName}</p>
+              <p className="text-xs text-muted-foreground">DevBite contributor</p>
+            </div>
+          </div>
         </header>
-        <div className="py-10 text-[1.0625rem] leading-8 text-slate-700 sm:py-14 sm:text-lg [&_a]:font-medium [&_a]:text-emerald-700 [&_a]:underline [&_a]:decoration-emerald-300 [&_a]:underline-offset-4 hover:[&_a]:decoration-emerald-600 [&_blockquote]:my-8 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-500 [&_blockquote]:bg-emerald-50/70 [&_blockquote]:px-6 [&_blockquote]:py-4 [&_blockquote]:text-slate-700 [&_code]:rounded [&_code]:bg-slate-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_h2]:mt-12 [&_h2]:mb-5 [&_h2]:text-3xl [&_h2]:leading-tight [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-slate-950 [&_h3]:mt-10 [&_h3]:mb-4 [&_h3]:text-2xl [&_h3]:leading-tight [&_h3]:font-bold [&_h3]:text-slate-900 [&_img]:my-10 [&_img]:h-auto [&_img]:w-full [&_img]:rounded-2xl [&_img]:shadow-lg [&_li]:my-2 [&_ol]:my-6 [&_ol]:list-decimal [&_ol]:pl-7 [&_p]:my-6 [&_pre]:my-8 [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:bg-slate-950 [&_pre]:p-6 [&_pre]:text-slate-100 [&_ul]:my-6 [&_ul]:list-disc [&_ul]:pl-7">
-          <RichText data={post.content} />
+
+        <div className="relative mt-10 aspect-[16/8.5] overflow-hidden rounded-2xl border border-border bg-muted shadow-xl shadow-slate-950/5 sm:mt-14 sm:rounded-3xl dark:shadow-black/20">
+          {imagePath ? (
+            <Image
+              alt={
+                typeof post.featuredImage === 'object' && post.featuredImage?.alt
+                  ? post.featuredImage.alt
+                  : ''
+              }
+              className="object-cover"
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              src={imagePath}
+            />
+          ) : (
+            <PostImagePlaceholder category={post.category} title={post.title} />
+          )}
+        </div>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-[3rem_minmax(0,46rem)] lg:justify-center lg:gap-10">
+          <ShareBar title={post.title} url={canonicalURL} />
+          <div className="prose prose-slate max-w-none font-reading prose-headings:font-body prose-headings:font-bold prose-headings:tracking-tight prose-a:text-accent prose-a:decoration-accent/35 prose-a:underline-offset-4 prose-blockquote:border-accent prose-blockquote:bg-accent-soft/60 prose-blockquote:px-6 prose-blockquote:py-2 prose-blockquote:not-italic prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:text-foreground prose-img:rounded-2xl prose-img:shadow-lg dark:prose-invert sm:prose-lg">
+            <RichText data={post.content} />
+          </div>
         </div>
       </article>
 
       <section
-        className="scroll-mt-8 border-t border-slate-200 pt-12 sm:pt-16"
+        className="mx-auto mt-16 max-w-3xl scroll-mt-24 border-t border-border pt-12 sm:mt-20 sm:pt-16"
         id="comments"
         aria-labelledby="comments-title"
       >
-        <div className="mb-8 flex items-end justify-between border-b border-slate-200 pb-4">
+        <div className="mb-8 flex items-end justify-between border-b border-border pb-5">
           <div>
-            <p className="mb-1 text-xs font-bold tracking-[0.16em] text-emerald-700 uppercase">
+            <p className="font-ui text-xs font-bold tracking-[0.18em] text-accent uppercase">
               Discussion
             </p>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950" id="comments-title">
+            <h2
+              className="mt-1 text-3xl font-black tracking-tight text-foreground"
+              id="comments-title"
+            >
               Comments
             </h2>
           </div>
-          <span className="grid size-9 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
-            {comments.length}
+          <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 font-ui text-xs font-bold text-muted-foreground">
+            <MessageCircle aria-hidden="true" size={14} /> {comments.length}
           </span>
         </div>
 
         {comments.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/50 px-6 py-10 text-center text-slate-500">
-            <p className="font-medium">No comments yet. Start the conversation.</p>
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 px-6 py-10 text-center">
+            <span className="mx-auto grid size-11 place-items-center rounded-2xl bg-accent-soft text-accent">
+              <MessageCircle aria-hidden="true" size={20} />
+            </span>
+            <h3 className="mt-4 font-bold text-foreground">Start the conversation</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Be the first to share a thoughtful response.
+            </p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {comments.map((comment) => (
-              <article
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-                key={comment.id}
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <strong className="font-bold text-slate-900">{comment.authorName}</strong>
-                  <time className="text-xs font-medium text-slate-400" dateTime={comment.createdAt}>
-                    {dateFormatter.format(new Date(comment.createdAt))}
-                  </time>
-                </div>
-                <p className="mt-3 leading-7 whitespace-pre-wrap text-slate-600">
-                  {comment.content}
-                </p>
-              </article>
-            ))}
+            {comments.map((comment) => {
+              const commentInitial = comment.authorName.trim().charAt(0).toUpperCase()
+              return (
+                <article
+                  className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6"
+                  key={comment.id}
+                >
+                  <header className="flex items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft font-ui text-sm font-black text-accent">
+                      {commentInitial}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-ui text-sm font-bold text-foreground">
+                        {comment.authorName}
+                      </p>
+                      <time
+                        className="font-ui text-xs text-muted-foreground"
+                        dateTime={comment.createdAt}
+                        title={new Date(comment.createdAt).toISOString()}
+                      >
+                        {dateFormatter.format(new Date(comment.createdAt))}
+                      </time>
+                    </div>
+                  </header>
+                  <p className="mt-4 leading-7 whitespace-pre-wrap text-muted-foreground">
+                    {comment.content}
+                  </p>
+                </article>
+              )
+            })}
           </div>
         )}
 
-        <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.3)] sm:p-10">
-          <h3 className="text-2xl font-bold tracking-tight text-slate-950">Leave a comment</h3>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Your email won’t be published. Comments appear after approval.
-          </p>
-          {query.comment === 'submitted' && (
-            <p
-              className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
-              role="status"
-            >
-              Comment submitted for approval!
-            </p>
-          )}
-          {query.comment === 'failed' && (
-            <p
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
-              role="alert"
-            >
-              We couldn’t submit your comment. Please try again.
-            </p>
-          )}
-          <form className="mt-8 grid gap-6" action={handleSubmit}>
-            <input name="postId" type="hidden" value={post.id} />
-            <div className="grid gap-6 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                Name
-                <input
-                  className="min-h-12 rounded-xl border border-slate-300 bg-slate-50/50 px-4 text-base font-normal text-slate-950 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
-                  autoComplete="name"
-                  maxLength={120}
-                  name="authorName"
-                  placeholder="Jane Doe"
-                  required
-                  type="text"
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-semibold text-slate-700">
-                Email
-                <input
-                  className="min-h-12 rounded-xl border border-slate-300 bg-slate-50/50 px-4 text-base font-normal text-slate-950 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
-                  autoComplete="email"
-                  maxLength={320}
-                  name="authorEmail"
-                  placeholder="jane@example.com"
-                  required
-                  type="email"
-                />
-              </label>
-            </div>
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Comment
-              <textarea
-                className="min-h-36 resize-y rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-3 text-base font-normal text-slate-950 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
-                maxLength={5000}
-                name="content"
-                placeholder="Share your thoughts…"
-                required
-                rows={6}
-              />
-            </label>
-            <button
-              className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 active:translate-y-px sm:w-fit"
-              type="submit"
-            >
-              Submit comment
-            </button>
-          </form>
-        </div>
+        <CommentForm postId={post.id} />
       </section>
     </div>
   )
