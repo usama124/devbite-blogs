@@ -305,6 +305,10 @@ export interface Post {
     [k: string]: unknown;
   };
   publishedAt: string;
+  /**
+   * Updated atomically when a reader opens this article.
+   */
+  viewCount: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -559,6 +563,7 @@ export interface PostsSelect<T extends boolean = true> {
   summary?: T;
   content?: T;
   publishedAt?: T;
+  viewCount?: T;
   updatedAt?: T;
   createdAt?: T;
 }

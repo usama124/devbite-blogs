@@ -5,7 +5,7 @@ export const ArticleMedia: CollectionConfig = {
   lockDocuments: false,
   admin: {
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
-    group: 'Content',
+    group: 'Article',
     useAsTitle: 'alt',
   },
   access: {

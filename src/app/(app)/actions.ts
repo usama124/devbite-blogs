@@ -1,6 +1,7 @@
 'use server'
 
 import config from '@payload-config'
+import { createClient, type Client } from '@libsql/client'
 import { revalidatePath } from 'next/cache'
 import { getPayload } from 'payload'
 
@@ -8,6 +9,47 @@ export type CommentActionState = {
   success: boolean
   message?: string
   error?: string
+}
+
+export type ArticleViewActionResult =
+  { success: true; count: number } | { success: false; count: number }
+
+let viewsDatabase: Client | null = null
+
+const getViewsDatabase = () => {
+  if (viewsDatabase) return viewsDatabase
+
+  const url = process.env.TURSO_DATABASE_URL
+  if (!url) throw new Error('TURSO_DATABASE_URL is required to record article views.')
+
+  viewsDatabase = createClient({
+    url,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  })
+
+  return viewsDatabase
+}
+
+export async function recordArticleView(postId: number): Promise<ArticleViewActionResult> {
+  if (!Number.isSafeInteger(postId) || postId < 1) return { success: false, count: 0 }
+
+  try {
+    const result = await getViewsDatabase().execute({
+      sql: `UPDATE posts
+        SET view_count = COALESCE(view_count, 0) + 1
+        WHERE id = ? AND published_at <= ?
+        RETURNING view_count`,
+      args: [postId, new Date().toISOString()],
+    })
+
+    const count = result.rows[0]?.view_count
+    if (typeof count !== 'number') return { success: false, count: 0 }
+
+    return { success: true, count }
+  } catch (error) {
+    console.error('Failed to record article view', error)
+    return { success: false, count: 0 }
+  }
 }
 
 const readRequiredString = (formData: FormData, key: string) => {

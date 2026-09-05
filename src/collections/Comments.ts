@@ -8,6 +8,7 @@ export const Comments: CollectionConfig = {
   admin: {
     useAsTitle: 'authorName',
     defaultColumns: ['authorName', 'post', 'isApproved', 'createdAt'],
+    group: 'Article',
   },
   access: {
     create: () => true,

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="devbite-gradient" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#devbite-gradient)"/>
+  <path d="M18 14h15.5C45.9 14 54 21.2 54 32S45.9 50 33.5 50H18V14Zm14.7 27.2c7.3 0 11.6-3.4 11.6-9.2s-4.3-9.2-11.6-9.2h-5v18.4h5Z" fill="#fff"/>
+  <circle cx="51" cy="14" r="7" fill="#111827"/>
+</svg>

@@ -9,6 +9,7 @@ import { cache } from 'react'
 
 import config from '@payload-config'
 import { CommentForm } from '@/components/comments/CommentForm'
+import { ArticleViewCounter } from '@/components/posts/ArticleViewCounter'
 import { PostAuthor } from '@/components/posts/PostAuthor'
 import { PostImagePlaceholder } from '@/components/posts/PostImagePlaceholder'
 import { ShareBar } from '@/components/posts/ShareBar'
@@ -180,6 +181,8 @@ export default async function PostPage({ params }: PostPageProps) {
             <span className="inline-flex items-center gap-1.5">
               <Clock3 aria-hidden="true" size={15} /> {readTime} min read
             </span>
+            <span aria-hidden="true" className="size-1 rounded-full bg-border" />
+            <ArticleViewCounter initialCount={post.viewCount} postId={post.id} />
           </div>
 
           <h1 className="mt-7 text-4xl leading-[1.06] font-black tracking-[-0.05em] text-foreground sm:text-6xl lg:text-7xl">

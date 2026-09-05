@@ -2,12 +2,17 @@ import type { CollectionConfig } from 'payload'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
+  labels: {
+    singular: 'Article',
+    plural: 'Articles',
+  },
   // Turso cannot apply Payload's development-mode table rebuild when a new
   // collection is added to the polymorphic document-lock relationship.
   lockDocuments: false,
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'category', 'publishedAt'],
+    defaultColumns: ['title', 'category', 'viewCount', 'publishedAt'],
+    group: 'Article',
   },
   access: {
     read: () => true,
@@ -126,6 +131,22 @@ export const Posts: CollectionConfig = {
       type: 'date',
       required: true,
       defaultValue: () => new Date().toISOString(),
+    },
+    {
+      name: 'viewCount',
+      label: 'Article views',
+      type: 'number',
+      required: true,
+      defaultValue: 0,
+      min: 0,
+      access: {
+        update: () => false,
+      },
+      admin: {
+        description: 'Updated atomically when a reader opens this article.',
+        position: 'sidebar',
+        readOnly: true,
+      },
     },
   ],
 }
