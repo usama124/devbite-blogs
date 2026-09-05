@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // The CLI-based checker can fail to parse `tsc --showConfig` output in some
     // build environments. Next's TypeScript API checker provides the same gate.
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
     useTypeScriptCli: false,
   },
   images: {

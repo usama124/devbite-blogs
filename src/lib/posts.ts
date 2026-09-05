@@ -1,4 +1,4 @@
-import type { Media, Post } from '@/payload-types'
+import type { Media, Post, User } from '@/payload-types'
 
 export const siteURL = 'https://blogs.devbite.dev'
 
@@ -21,7 +21,9 @@ export const getReadTime = (content: Post['content']) => {
   return Math.max(1, Math.ceil(words / 220))
 }
 
-export const getMediaURL = (image: Post['featuredImage']) => {
+type MediaValue = Media | number | null | undefined
+
+export const getMediaURL = (image: MediaValue) => {
   if (!image || typeof image === 'number') return null
 
   const media = image as Media
@@ -30,9 +32,26 @@ export const getMediaURL = (image: Post['featuredImage']) => {
   return new URL(media.url, siteURL).toString()
 }
 
-export const getMediaPath = (image: Post['featuredImage']) => {
+export const getMediaPath = (image: MediaValue) => {
   if (!image || typeof image === 'number') return null
-  return (image as Media).url ?? null
+  return image.url ?? null
+}
+
+export const getAvatarPath = (image: User['avatar']) => {
+  if (!image || typeof image === 'number') return null
+  return image.sizes?.thumbnail?.url ?? image.url ?? null
+}
+
+export const getPostAuthor = (post: Post) => {
+  const user = post.author && typeof post.author === 'object' ? post.author : null
+
+  return {
+    avatar: user?.avatar,
+    bio: user?.bio?.trim() || null,
+    jobTitle: user?.jobTitle?.trim() || 'DevBite contributor',
+    name: user?.name?.trim() || post.authorName || 'DevBite Author',
+    website: user?.website?.trim() || null,
+  }
 }
 
 export const formatCategory = (category: Post['category']) =>

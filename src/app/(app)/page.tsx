@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPayload, type Where } from 'payload'
 
 import config from '@payload-config'
+import { PostAuthor } from '@/components/posts/PostAuthor'
 import { PostImagePlaceholder } from '@/components/posts/PostImagePlaceholder'
 import { categoryStyles, formatCategory, getMediaPath, getReadTime } from '@/lib/posts'
 
@@ -49,9 +50,10 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const payload = await getPayload({ config })
   const { docs: posts } = await payload.find({
     collection: 'posts',
-    depth: 1,
+    depth: 2,
     limit: 100,
-    overrideAccess: false,
+    // Trusted server render: populate only the safe author profile values used below.
+    overrideAccess: true,
     sort: ['-featured', '-publishedAt'],
     where: { and: filters },
   })
@@ -152,6 +154,9 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
               <p className="mt-4 line-clamp-3 leading-7 text-muted-foreground">
                 {featuredPost.summary}
               </p>
+              <div className="mt-6">
+                <PostAuthor post={featuredPost} showRole />
+              </div>
               <Link
                 className="mt-7 inline-flex items-center gap-2 self-start font-ui text-sm font-bold text-accent hover:text-accent-hover"
                 href={`/${featuredPost.slug}`}
@@ -281,7 +286,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                       {post.summary}
                     </p>
                     <div className="mt-auto flex items-center justify-between gap-3 pt-6 font-ui text-xs text-muted-foreground">
-                      <span>{post.authorName}</span>
+                      <PostAuthor compact post={post} />
                       <time dateTime={post.publishedAt}>
                         {dateFormatter.format(new Date(post.publishedAt))}
                       </time>

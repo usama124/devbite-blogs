@@ -1,5 +1,5 @@
 import { RichText } from '@payloadcms/richtext-lexical/react'
-import { ArrowLeft, Clock3, MessageCircle, UserRound } from 'lucide-react'
+import { ArrowLeft, Clock3, MessageCircle } from 'lucide-react'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -9,6 +9,7 @@ import { cache } from 'react'
 
 import config from '@payload-config'
 import { CommentForm } from '@/components/comments/CommentForm'
+import { PostAuthor } from '@/components/posts/PostAuthor'
 import { PostImagePlaceholder } from '@/components/posts/PostImagePlaceholder'
 import { ShareBar } from '@/components/posts/ShareBar'
 import {
@@ -16,6 +17,7 @@ import {
   formatCategory,
   getMediaPath,
   getMediaURL,
+  getPostAuthor,
   getReadTime,
   siteURL,
 } from '@/lib/posts'
@@ -43,9 +45,10 @@ const findPost = cache(async (slug: string) => {
         { publishedAt: { less_than_equal: new Date().toISOString() } },
       ],
     },
-    depth: 1,
+    depth: 2,
     limit: 1,
-    overrideAccess: false,
+    // Trusted server render: the UI exposes only curated public profile fields.
+    overrideAccess: true,
   })
 
   return docs[0] ?? null
@@ -59,11 +62,12 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
   const canonicalURL = `${siteURL}/${post.slug}`
   const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
+  const author = getPostAuthor(post)
 
   return {
     title: post.title,
     description: post.summary,
-    authors: [{ name: post.authorName }],
+    authors: [{ name: author.name }],
     alternates: { canonical: canonicalURL },
     openGraph: {
       type: 'article',
@@ -73,7 +77,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
       siteName: 'DevBite Blogs',
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
-      authors: [post.authorName],
+      authors: [author.name],
       section: formatCategory(post.category),
       images: [{ url: imageURL, width: 1200, height: 630, alt: post.title }],
     },
@@ -107,13 +111,8 @@ export default async function PostPage({ params }: PostPageProps) {
   const canonicalURL = `${siteURL}/${post.slug}`
   const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
   const imagePath = getMediaPath(post.featuredImage)
+  const author = getPostAuthor(post)
   const readTime = getReadTime(post.content)
-  const initials = post.authorName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
 
   const structuredData = {
     '@context': 'https://schema.org',
@@ -125,7 +124,9 @@ export default async function PostPage({ params }: PostPageProps) {
     dateModified: post.updatedAt,
     author: {
       '@type': 'Person',
-      name: post.authorName,
+      name: author.name,
+      ...(author.website ? { url: author.website } : {}),
+      ...(getMediaURL(author.avatar) ? { image: getMediaURL(author.avatar) } : {}),
     },
     publisher: {
       '@type': 'Organization',
@@ -185,14 +186,8 @@ export default async function PostPage({ params }: PostPageProps) {
             {post.summary}
           </p>
 
-          <div className="mt-8 flex items-center justify-center gap-3 font-ui">
-            <span className="grid size-11 place-items-center rounded-full bg-accent-soft text-sm font-black text-accent ring-1 ring-accent/15">
-              {initials || <UserRound aria-hidden="true" size={18} />}
-            </span>
-            <div className="text-left">
-              <p className="text-sm font-bold text-foreground">{post.authorName}</p>
-              <p className="text-xs text-muted-foreground">DevBite contributor</p>
-            </div>
+          <div className="mt-8 flex justify-center">
+            <PostAuthor post={post} showRole />
           </div>
         </header>
 

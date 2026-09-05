@@ -12,6 +12,36 @@ export const Posts: CollectionConfig = {
   access: {
     read: () => true,
   },
+  hooks: {
+    beforeChange: [
+      ({ data, operation, originalDoc, req }) => {
+        const user = req.user as {
+          collection?: string
+          email?: string
+          id: number | string
+          name?: string
+        } | null
+
+        if (!user || user.collection !== 'users') return data
+
+        if (operation === 'create') {
+          data.author = user.id
+          data.authorName = user.name?.trim() || user.email || 'DevBite Author'
+        }
+
+        if (operation === 'update') {
+          data.author =
+            originalDoc?.author && typeof originalDoc.author === 'object'
+              ? originalDoc.author.id
+              : (originalDoc?.author ?? user.id)
+          data.authorName =
+            originalDoc?.authorName || user.name?.trim() || user.email || 'DevBite Author'
+        }
+
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'title',
@@ -52,11 +82,24 @@ export const Posts: CollectionConfig = {
       },
     },
     {
+      name: 'author',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: {
+        description: 'Automatically assigned to the user who creates the article.',
+        position: 'sidebar',
+        readOnly: true,
+      },
+    },
+    {
       name: 'authorName',
       type: 'text',
       required: true,
       defaultValue: 'DevBite Editorial',
       maxLength: 120,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: 'summary',
