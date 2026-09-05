@@ -78,7 +78,17 @@ export const Posts: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       admin: {
-        description: 'Recommended aspect ratio: 16:9.',
+        hidden: true,
+        readOnly: true,
+      },
+    },
+    {
+      name: 'articleImage',
+      label: 'Featured image',
+      type: 'upload',
+      relationTo: 'article-media',
+      admin: {
+        description: 'Recommended aspect ratio: 16:9. New uploads are stored under article/ in R2.',
       },
     },
     {

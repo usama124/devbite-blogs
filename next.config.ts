@@ -6,6 +6,32 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
+const remotePatterns: NonNullable<NonNullable<NextConfig['images']>['remotePatterns']> = [
+  {
+    protocol: 'https',
+    hostname: 'media.devbite.dev',
+    pathname: '/**',
+  },
+]
+
+if (process.env.R2_PUBLIC_URL) {
+  try {
+    const publicMediaURL = new URL(process.env.R2_PUBLIC_URL)
+    const protocol = publicMediaURL.protocol.replace(':', '')
+
+    if (protocol === 'http' || protocol === 'https') {
+      remotePatterns.push({
+        protocol,
+        hostname: publicMediaURL.hostname,
+        port: publicMediaURL.port,
+        pathname: `${publicMediaURL.pathname.replace(/\/$/, '') || ''}/**`,
+      })
+    }
+  } catch {
+    // Payload reports an invalid public URL when it generates a media URL.
+  }
+}
+
 const nextConfig: NextConfig = {
   agentRules: false,
   experimental: {
@@ -17,6 +43,7 @@ const nextConfig: NextConfig = {
     useTypeScriptCli: false,
   },
   images: {
+    remotePatterns,
     localPatterns: [
       {
         pathname: '/api/media/file/**',

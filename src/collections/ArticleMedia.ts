@@ -1,11 +1,12 @@
 import type { CollectionConfig } from 'payload'
 
-export const Media: CollectionConfig = {
-  slug: 'media',
+export const ArticleMedia: CollectionConfig = {
+  slug: 'article-media',
+  lockDocuments: false,
   admin: {
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
     group: 'Content',
-    hidden: true,
+    useAsTitle: 'alt',
   },
   access: {
     create: ({ req }) => Boolean(req.user),
@@ -16,7 +17,10 @@ export const Media: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, req }) => {
-        if (!data || (typeof data.alt === 'string' && data.alt.trim())) return data
+        if (!data) return data
+
+        data.prefix = 'article'
+        if (typeof data.alt === 'string' && data.alt.trim()) return data
 
         const uploadedName = req.file?.name
         if (uploadedName) {
@@ -36,6 +40,12 @@ export const Media: CollectionConfig = {
       name: 'alt',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'prefix',
+      type: 'text',
+      defaultValue: 'article',
+      admin: { hidden: true, readOnly: true },
     },
   ],
   upload: {

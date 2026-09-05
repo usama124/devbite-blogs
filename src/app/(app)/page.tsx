@@ -6,7 +6,14 @@ import { getPayload, type Where } from 'payload'
 import config from '@payload-config'
 import { PostAuthor } from '@/components/posts/PostAuthor'
 import { PostImagePlaceholder } from '@/components/posts/PostImagePlaceholder'
-import { categoryStyles, formatCategory, getMediaPath, getReadTime } from '@/lib/posts'
+import {
+  categoryStyles,
+  formatCategory,
+  getMediaAlt,
+  getMediaPath,
+  getPostImage,
+  getReadTime,
+} from '@/lib/posts'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +67,8 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   const featuredPost = posts[0]
   const remainingPosts = featuredPost ? posts.slice(1) : []
-  const featuredImagePath = featuredPost ? getMediaPath(featuredPost.featuredImage) : null
+  const featuredImage = featuredPost ? getPostImage(featuredPost) : null
+  const featuredImagePath = getMediaPath(featuredImage)
 
   return (
     <div className="pb-8">
@@ -107,12 +115,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
               {featuredImagePath ? (
                 <>
                   <Image
-                    alt={
-                      typeof featuredPost.featuredImage === 'object' &&
-                      featuredPost.featuredImage?.alt
-                        ? featuredPost.featuredImage.alt
-                        : ''
-                    }
+                    alt={getMediaAlt(featuredImage)}
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
                     fill
                     priority
@@ -236,7 +239,8 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {remainingPosts.map((post) => {
-              const imagePath = getMediaPath(post.featuredImage)
+              const image = getPostImage(post)
+              const imagePath = getMediaPath(image)
 
               return (
                 <article
@@ -251,11 +255,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                   >
                     {imagePath ? (
                       <Image
-                        alt={
-                          typeof post.featuredImage === 'object' && post.featuredImage?.alt
-                            ? post.featuredImage.alt
-                            : ''
-                        }
+                        alt={getMediaAlt(image)}
                         className="object-cover transition duration-500 group-hover:scale-105"
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

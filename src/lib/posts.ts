@@ -1,4 +1,4 @@
-import type { Media, Post, User } from '@/payload-types'
+import type { Post, User } from '@/payload-types'
 
 export const siteURL = 'https://blogs.devbite.dev'
 
@@ -21,24 +21,37 @@ export const getReadTime = (content: Post['content']) => {
   return Math.max(1, Math.ceil(words / 220))
 }
 
-type MediaValue = Media | number | null | undefined
+type MediaValue =
+  | {
+      alt?: null | string
+      sizes?: null | {
+        thumbnail?: null | { url?: null | string }
+      }
+      url?: null | string
+    }
+  | number
+  | string
+  | null
+  | undefined
 
 export const getMediaURL = (image: MediaValue) => {
-  if (!image || typeof image === 'number') return null
+  if (!image || typeof image !== 'object' || !image.url) return null
 
-  const media = image as Media
-  if (!media.url) return null
-
-  return new URL(media.url, siteURL).toString()
+  return new URL(image.url, siteURL).toString()
 }
 
 export const getMediaPath = (image: MediaValue) => {
-  if (!image || typeof image === 'number') return null
+  if (!image || typeof image !== 'object') return null
   return image.url ?? null
 }
 
-export const getAvatarPath = (image: User['avatar']) => {
-  if (!image || typeof image === 'number') return null
+export const getMediaAlt = (image: MediaValue) =>
+  image && typeof image === 'object' ? (image.alt ?? '') : ''
+
+export const getPostImage = (post: Post) => post.articleImage ?? post.featuredImage
+
+export const getAvatarPath = (image: User['avatar'] | User['profileAvatar']) => {
+  if (!image || typeof image !== 'object') return null
   return image.sizes?.thumbnail?.url ?? image.url ?? null
 }
 
@@ -46,7 +59,7 @@ export const getPostAuthor = (post: Post) => {
   const user = post.author && typeof post.author === 'object' ? post.author : null
 
   return {
-    avatar: user?.avatar,
+    avatar: user?.profileAvatar ?? user?.avatar,
     bio: user?.bio?.trim() || null,
     jobTitle: user?.jobTitle?.trim() || 'DevBite contributor',
     name: user?.name?.trim() || post.authorName || 'DevBite Author',

@@ -15,9 +15,11 @@ import { ShareBar } from '@/components/posts/ShareBar'
 import {
   categoryStyles,
   formatCategory,
+  getMediaAlt,
   getMediaPath,
   getMediaURL,
   getPostAuthor,
+  getPostImage,
   getReadTime,
   siteURL,
 } from '@/lib/posts'
@@ -61,7 +63,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   if (!post) return { title: 'Post not found', robots: { index: false, follow: false } }
 
   const canonicalURL = `${siteURL}/${post.slug}`
-  const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
+  const imageURL = getMediaURL(getPostImage(post)) ?? `${canonicalURL}/opengraph-image`
   const author = getPostAuthor(post)
 
   return {
@@ -109,8 +111,9 @@ export default async function PostPage({ params }: PostPageProps) {
   })
 
   const canonicalURL = `${siteURL}/${post.slug}`
-  const imageURL = getMediaURL(post.featuredImage) ?? `${canonicalURL}/opengraph-image`
-  const imagePath = getMediaPath(post.featuredImage)
+  const postImage = getPostImage(post)
+  const imageURL = getMediaURL(postImage) ?? `${canonicalURL}/opengraph-image`
+  const imagePath = getMediaPath(postImage)
   const author = getPostAuthor(post)
   const readTime = getReadTime(post.content)
 
@@ -194,11 +197,7 @@ export default async function PostPage({ params }: PostPageProps) {
         <div className="relative mt-10 aspect-[16/8.5] overflow-hidden rounded-2xl border border-border bg-muted shadow-xl shadow-slate-950/5 sm:mt-14 sm:rounded-3xl dark:shadow-black/20">
           {imagePath ? (
             <Image
-              alt={
-                typeof post.featuredImage === 'object' && post.featuredImage?.alt
-                  ? post.featuredImage.alt
-                  : ''
-              }
+              alt={getMediaAlt(postImage)}
               className="object-cover"
               fill
               priority

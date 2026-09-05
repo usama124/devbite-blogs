@@ -5,6 +5,7 @@ export const Users: CollectionConfig = {
   defaultPopulate: {
     name: true,
     avatar: true,
+    profileAvatar: true,
     jobTitle: true,
     bio: true,
     location: true,
@@ -30,7 +31,17 @@ export const Users: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       admin: {
-        description: 'A square image works best across article cards and author profiles.',
+        hidden: true,
+        readOnly: true,
+      },
+    },
+    {
+      name: 'profileAvatar',
+      label: 'Profile picture',
+      type: 'upload',
+      relationTo: 'profile-media',
+      admin: {
+        description: 'A square image works best. New uploads are stored under profile/ in R2.',
       },
     },
     {

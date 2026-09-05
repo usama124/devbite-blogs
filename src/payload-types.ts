@@ -69,6 +69,8 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'article-media': ArticleMedia;
+    'profile-media': ProfileMedia;
     posts: Post;
     comments: Comment;
     'payload-kv': PayloadKv;
@@ -80,6 +82,8 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'article-media': ArticleMediaSelect<false> | ArticleMediaSelect<true>;
+    'profile-media': ProfileMediaSelect<false> | ProfileMediaSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -128,10 +132,11 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name: string;
-  /**
-   * A square image works best across article cards and author profiles.
-   */
   avatar?: (number | null) | Media;
+  /**
+   * A square image works best. New uploads are stored under profile/ in R2.
+   */
+  profileAvatar?: (number | null) | ProfileMedia;
   jobTitle?: string | null;
   bio?: string | null;
   location?: string | null;
@@ -194,6 +199,74 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-media".
+ */
+export interface ProfileMedia {
+  id: number;
+  alt: string;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "article-media".
+ */
+export interface ArticleMedia {
+  id: number;
+  alt: string;
+  prefix?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
@@ -205,10 +278,11 @@ export interface Post {
    * Feature this post prominently on the public homepage.
    */
   featured?: boolean | null;
-  /**
-   * Recommended aspect ratio: 16:9.
-   */
   featuredImage?: (number | null) | Media;
+  /**
+   * Recommended aspect ratio: 16:9. New uploads are stored under article/ in R2.
+   */
+  articleImage?: (number | null) | ArticleMedia;
   /**
    * Automatically assigned to the user who creates the article.
    */
@@ -329,6 +403,7 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   avatar?: T;
+  profileAvatar?: T;
   jobTitle?: T;
   bio?: T;
   location?: T;
@@ -394,6 +469,82 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "article-media_select".
+ */
+export interface ArticleMediaSelect<T extends boolean = true> {
+  alt?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "profile-media_select".
+ */
+export interface ProfileMediaSelect<T extends boolean = true> {
+  alt?: T;
+  prefix?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
@@ -402,6 +553,7 @@ export interface PostsSelect<T extends boolean = true> {
   category?: T;
   featured?: T;
   featuredImage?: T;
+  articleImage?: T;
   author?: T;
   authorName?: T;
   summary?: T;

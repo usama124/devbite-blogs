@@ -1,11 +1,12 @@
 import type { CollectionConfig } from 'payload'
 
-export const Media: CollectionConfig = {
-  slug: 'media',
+export const ProfileMedia: CollectionConfig = {
+  slug: 'profile-media',
+  lockDocuments: false,
   admin: {
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
-    group: 'Content',
-    hidden: true,
+    group: 'People',
+    useAsTitle: 'alt',
   },
   access: {
     create: ({ req }) => Boolean(req.user),
@@ -16,7 +17,10 @@ export const Media: CollectionConfig = {
   hooks: {
     beforeValidate: [
       ({ data, req }) => {
-        if (!data || (typeof data.alt === 'string' && data.alt.trim())) return data
+        if (!data) return data
+
+        data.prefix = 'profile'
+        if (typeof data.alt === 'string' && data.alt.trim()) return data
 
         const uploadedName = req.file?.name
         if (uploadedName) {
@@ -37,6 +41,12 @@ export const Media: CollectionConfig = {
       type: 'text',
       required: true,
     },
+    {
+      name: 'prefix',
+      type: 'text',
+      defaultValue: 'profile',
+      admin: { hidden: true, readOnly: true },
+    },
   ],
   upload: {
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/gif'],
@@ -47,12 +57,6 @@ export const Media: CollectionConfig = {
         name: 'thumbnail',
         width: 320,
         height: 320,
-        position: 'centre',
-      },
-      {
-        name: 'card',
-        width: 1200,
-        height: 675,
         position: 'centre',
       },
     ],
