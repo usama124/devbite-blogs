@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader, SiteHeaderFallback } from '@/components/layout/SiteHeader'
 import { AppProviders } from '@/components/theme/AppProviders'
@@ -50,6 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <ThemeBootScript />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
+        <GoogleAnalytics />
         <AppProviders>
           <Suspense fallback={<SiteHeaderFallback />}>
             <SiteHeader />
