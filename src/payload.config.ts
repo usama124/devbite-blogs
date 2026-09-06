@@ -139,9 +139,14 @@ export default buildConfig({
     // schema push is interrupted. The deployed schema is managed explicitly;
     // opt in only while applying a deliberate schema change.
     push: process.env.PAYLOAD_DB_PUSH === 'true',
-    client: {
-      url: process.env.TURSO_DATABASE_URL || '',
-      authToken: process.env.TURSO_AUTH_TOKEN || '',
-    },
+    client:
+      process.env.USE_LOCAL_DB === 'true' || !process.env.TURSO_DATABASE_URL
+        ? {
+            url: process.env.DATABASE_URL || 'file:local.db',
+          }
+        : {
+            url: process.env.TURSO_DATABASE_URL,
+            authToken: process.env.TURSO_AUTH_TOKEN || '',
+          },
   }),
 })
