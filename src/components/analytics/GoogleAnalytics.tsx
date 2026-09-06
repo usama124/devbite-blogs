@@ -6,7 +6,9 @@ interface GoogleAnalyticsProps {
   gaId?: string
 }
 
-export function GoogleAnalytics({ gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-CGTVL8CGG5' }: GoogleAnalyticsProps) {
+export function GoogleAnalytics({
+  gaId = process.env.GA_ID || 'G-CGTVL8CGG5',
+}: GoogleAnalyticsProps) {
   if (!gaId) return null
 
   return (
@@ -29,4 +31,3 @@ export function GoogleAnalytics({ gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-CGT
     </>
   )
 }
-

@@ -51,7 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <ThemeBootScript />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <GoogleAnalytics />
+        <GoogleAnalytics gaId={process.env.GA_ID} />
         <AppProviders>
           <Suspense fallback={<SiteHeaderFallback />}>
             <SiteHeader />
