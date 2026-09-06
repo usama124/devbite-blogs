@@ -131,6 +131,11 @@ export const Posts: CollectionConfig = {
       type: 'date',
       required: true,
       defaultValue: () => new Date().toISOString(),
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
     },
     {
       name: 'viewCount',
