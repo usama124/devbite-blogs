@@ -1,4 +1,12 @@
 import type { CollectionConfig } from 'payload'
+import {
+  EXPERIMENTAL_TableFeature,
+  FixedToolbarFeature,
+  HTMLConverterFeature,
+  InlineToolbarFeature,
+  UploadFeature,
+  lexicalEditor,
+} from '@payloadcms/richtext-lexical'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -125,6 +133,37 @@ export const Posts: CollectionConfig = {
       name: 'content',
       type: 'richText',
       required: true,
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          EXPERIMENTAL_TableFeature(),
+          FixedToolbarFeature(),
+          InlineToolbarFeature(),
+          UploadFeature({
+            collections: {
+              'article-media': {
+                fields: [
+                  {
+                    name: 'caption',
+                    type: 'text',
+                    label: 'Caption',
+                  },
+                ],
+              },
+              media: {
+                fields: [
+                  {
+                    name: 'caption',
+                    type: 'text',
+                    label: 'Caption',
+                  },
+                ],
+              },
+            },
+          }),
+          HTMLConverterFeature(),
+        ],
+      }),
     },
     {
       name: 'publishedAt',
